@@ -19,6 +19,8 @@ public class BipRed {
 	int X;
 	int Y;
 	List<Edge> edges = new ArrayList<>();
+	ArrayList<Edge> flowEdges = new ArrayList<>();
+	int totflow;
 
 	class Edge {
 		int from, to;
@@ -53,15 +55,15 @@ public class BipRed {
 		V = X + Y;
 		E = io.getInt();
 
-		System.err.println("X: " + X);
-		System.err.println("Y: " + Y);
-		System.err.println("E: " + E);
+		//System.err.println("X: " + X);
+		//System.err.println("Y: " + Y);
+		//System.err.println("E: " + E);
 		// Läs in kanterna
 		for (int i = 0; i < E; ++i) {
 			int a = io.getInt();
 			int b = io.getInt();
 			edges.add(new Edge(a, b));
-			System.err.println("kant: "+ "(" + a + ", "+ b + ")");
+			// System.err.println("kant: "+ "(" + a + ", "+ b + ")");
 		}
     }
     
@@ -81,6 +83,7 @@ public class BipRed {
 
     
     void writeFlowGraph() {
+		System.err.println("flödesgrafen");
 		V = V + 2;
 		int s = V-1, t = V;
 		// Create a new list for additional edges
@@ -100,54 +103,89 @@ public class BipRed {
 		// Skriv ut antal hörn och kanter samt källa och sänka
 		//io.println();
 		io.println(V);
+		//System.err.println(V);
 		io.println(s + " " + t);
+		//System.err.println(s + " " + t);
 		io.println(edges.size());
+		//System.err.println(edges.size());
 		
 		
 		for (Edge edge : edges) {
 			int c = 1;
 			io.println(edge.from + " " + edge.to + " " + c);
+			//System.err.println(edge.from + " " + edge.to + " " + c);
 		}
 		// Var noggrann med att flusha utdata när flödesgrafen skrivits ut!
 		io.flush();
 		
 		// Debugutskrift
-		//System.err.println("Skickade iväg flödesgrafen");
+		System.err.println("Skickade iväg flödesgrafen");
     }
     
+	void solveFlowGraph() {
+		int v = io.getInt(); // Antal hörn
+        int s = io.getInt(); // Källa
+        int t = io.getInt(); // Utlopp
+        int e = io.getInt(); // Antal kanter
+
+		int[][] capacity = new int[v + 1][v + 1];
+        int[][] flow = new int[v + 1][v + 1];
+		int maxFlow = 0;
+
+        // Läs in kanterna och uppdatera kapaciteten
+        for (int i = 0; i < e; i++) {
+            int a = io.getInt();
+            int b = io.getInt();
+            int c = io.getInt();
+            capacity[a][b] = c;
+        }
+	}
+
+
     
     void readMaxFlowSolution() {
 		// Läs in antal hörn, kanter, källa, sänka, och totalt flöde
 		// (Antal hörn, källa och sänka borde vara samma som vi i grafen vi
 		// skickade iväg)
 		int v = io.getInt();
+		System.err.println(v);
 		int s = io.getInt();
 		int t = io.getInt();
-		int totflow = io.getInt();
+		totflow = io.getInt();
+		System.err.println(s + "  " + t + "  " + totflow);
 		int e = io.getInt();
+		System.err.println(e);
+		
 
 		for (int i = 0; i < e; ++i) {
 			// Flöde f från a till b
 			int a = io.getInt();
 			int b = io.getInt();
 			int f = io.getInt();
+			if (f > 0 && a != s && b != t) {
+				// Vi lägger endast till kanter med flöde och som inte är direkt kopplade till källa eller sänka
+				flowEdges.add(new Edge(a, b));
+				System.err.println(a + " " + b + " " + f);
+			}
+	
 		}
+
+		System.err.println("Läst flödeslösningen");
     }
     
     
     void writeBipMatchSolution() {
-	int x = 17, y = 4711, maxMatch = 0;
 	
 	// Skriv ut antal hörn och storleken på matchningen
-	io.println(x + " " + y);
-	io.println(maxMatch);
+	io.println(X + " " + Y);
+	io.println(totflow);
 	
-	for (int i = 0; i < maxMatch; ++i) {
-	    int a = 5, b = 2323;
-	    // Kant mellan a och b ingår i vår matchningslösning
-	    io.println(a + " " + b);
-	}
-	
+	for (Edge edge : flowEdges) {
+        // Kant mellan a och b ingår i vår matchningslösning
+        io.println(edge.from + " " + edge.to);
+    }
+
+	io.flush();
     }
     
     BipRed() {
@@ -157,12 +195,12 @@ public class BipRed {
 	
 	writeFlowGraph();
 	
-	//readMaxFlowSolution();
+	readMaxFlowSolution();
 	
-	//writeBipMatchSolution();
+	writeBipMatchSolution();
 
 	// debugutskrift
-	//System.err.println("Bipred avslutar\n");
+	System.err.println("Bipred avslutar\n");
 
 	// Kom ihåg att stänga ner Kattio-klassen
 	io.close();
