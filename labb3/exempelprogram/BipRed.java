@@ -1,6 +1,9 @@
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Exempel på in- och utdatahantering för maxflödeslabben i kursen
@@ -20,6 +23,7 @@ public class BipRed {
 	int Y;
 	List<Edge> edges = new ArrayList<>();
 	ArrayList<Edge> flowEdges = new ArrayList<>();
+	
 	int totflow;
 
 	class Edge {
@@ -42,8 +46,9 @@ public class BipRed {
     	public void setFrom(int from) {
         	this.from = from;
     	}
-	}
 
+	
+	}
 
 
     void readBipartiteGraph() {
@@ -66,26 +71,13 @@ public class BipRed {
 			// System.err.println("kant: "+ "(" + a + ", "+ b + ")");
 		}
     }
-    
-/*
-	bipgen 2 2 2
-	X = 2, Y = 2, E = 2
-	(2,3)
-	(1,4)
-	
-		2--3
-	s--		--t		
-		1--4
-	V = 6
-
- */
-
 
     
     void writeFlowGraph() {
 		System.err.println("flödesgrafen");
 		V = V + 2;
 		int s = V-1, t = V;
+		int c = 1;
 		// Create a new list for additional edges
 		List<Edge> additionalEdges = new ArrayList<>();
 		
@@ -103,17 +95,15 @@ public class BipRed {
 		// Skriv ut antal hörn och kanter samt källa och sänka
 		//io.println();
 		io.println(V);
-		//System.err.println(V);
+		System.err.println(V);
 		io.println(s + " " + t);
-		//System.err.println(s + " " + t);
+		System.err.println(s + " " + t);
 		io.println(edges.size());
-		//System.err.println(edges.size());
-		
+		System.err.println(edges.size());
 		
 		for (Edge edge : edges) {
-			int c = 1;
 			io.println(edge.from + " " + edge.to + " " + c);
-			//System.err.println(edge.from + " " + edge.to + " " + c);
+			System.err.println(edge.from + " " + edge.to + " " + c);
 		}
 		// Var noggrann med att flusha utdata när flödesgrafen skrivits ut!
 		io.flush();
@@ -122,15 +112,15 @@ public class BipRed {
 		System.err.println("Skickade iväg flödesgrafen");
     }
     
+	
 	void solveFlowGraph() {
-		int v = io.getInt(); // Antal hörn
+        int v = io.getInt(); // Antal hörn
         int s = io.getInt(); // Källa
         int t = io.getInt(); // Utlopp
         int e = io.getInt(); // Antal kanter
 
-		int[][] capacity = new int[v + 1][v + 1];
+        int[][] capacity = new int[v + 1][v + 1];
         int[][] flow = new int[v + 1][v + 1];
-		int maxFlow = 0;
 
         // Läs in kanterna och uppdatera kapaciteten
         for (int i = 0; i < e; i++) {
@@ -139,8 +129,74 @@ public class BipRed {
             int c = io.getInt();
             capacity[a][b] = c;
         }
-	}
 
+        int maxFlow = 0;
+
+        // Ford-Fulkerson's algoritm
+        while (true) {
+            int[] parent = new int[v + 1]; // Används för att spara vägen
+            Arrays.fill(parent, -1);
+            Queue<Integer> queue = new LinkedList<>();
+            queue.add(s);
+            parent[s] = s;
+
+            // Standard BFS för att hitta en förbättrande stig
+            while (!queue.isEmpty()) {
+                int a = queue.poll();
+                for (int b = 1; b <= v; b++) {
+                    if (parent[b] == -1 && capacity[a][b] - flow[a][b] > 0) {
+                        queue.add(b);
+                        parent[b] = a;
+						
+                    }
+                }
+            }
+
+            // Om det inte finns någon stig från s till t
+            if (parent[t] == -1) {
+                break;
+            }
+
+            // Hitta den minsta restkapaciteten längs stigen
+            int pathFlow = Integer.MAX_VALUE;
+            for (int b = t; b != s; b = parent[b]) {
+                int a = parent[b];
+                pathFlow = Math.min(pathFlow, capacity[a][b] - flow[a][b]);
+            }
+
+            // Uppdatera flödena längs stigen
+            for (int b = t; b != s; b = parent[b]) {
+                int a = parent[b];
+                flow[a][b] += pathFlow;
+                flow[b][a] -= pathFlow;
+            }
+
+            maxFlow += pathFlow;
+        }
+
+		int edgeCount = 0;
+
+    		for (int a = 1; a <= v; a++) {
+        		for (int b = 1; b <= v; b++) {
+            		if (flow[a][b] > 0) {
+                		edgeCount++;
+            		}
+        		}
+    		}
+        // Skriv ut resultat
+        io.println(v);
+        io.println(s + " " + t + " " + maxFlow);
+		io.println(edgeCount);
+        for (int a = 1; a <= v; a++) {
+            for (int b = 1; b <= v; b++) {
+                if (flow[a][b] > 0) {
+                    io.println(a + " " + b + " " + flow[a][b]);
+                }
+            }
+        }
+
+        io.flush();
+    }
 
     
     void readMaxFlowSolution() {
@@ -148,16 +204,17 @@ public class BipRed {
 		// (Antal hörn, källa och sänka borde vara samma som vi i grafen vi
 		// skickade iväg)
 		int v = io.getInt();
-		System.err.println(v);
 		int s = io.getInt();
 		int t = io.getInt();
 		totflow = io.getInt();
-		System.err.println(s + "  " + t + "  " + totflow);
 		int e = io.getInt();
+		System.err.println(v);
+		System.err.println(s + " " + t + " " + totflow);
 		System.err.println(e);
 		
 
 		for (int i = 0; i < e; ++i) {
+			
 			// Flöde f från a till b
 			int a = io.getInt();
 			int b = io.getInt();
@@ -191,13 +248,15 @@ public class BipRed {
     BipRed() {
 	io = new Kattio(System.in, System.out);
 	
-	readBipartiteGraph();
+	//readBipartiteGraph();
 	
-	writeFlowGraph();
+	//writeFlowGraph();
+
+	solveFlowGraph();
 	
-	readMaxFlowSolution();
+	//readMaxFlowSolution();
 	
-	writeBipMatchSolution();
+	//writeBipMatchSolution();
 
 	// debugutskrift
 	System.err.println("Bipred avslutar\n");
