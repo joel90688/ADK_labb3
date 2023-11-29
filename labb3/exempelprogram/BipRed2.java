@@ -26,6 +26,8 @@ public class BipRed2 {
 	ArrayList<Edge> flowEdges = new ArrayList<>();
 	int totflow;
 
+	LinkedList<Edge>[] adjacencyList;
+
 	class Edge {
 		int from, to, cap, flow;
 	
@@ -35,12 +37,7 @@ public class BipRed2 {
 			this.cap = cap;
             this.flow = flow;
 		}
-
-
-
 	}
-
-
 
     void readBipartiteGraph() {
 	
@@ -119,6 +116,24 @@ public class BipRed2 {
         }
         return false;
     }
+
+	public void addEdge(int a, int b, int c) {
+    
+        if (a == b) {
+            return;
+        }
+
+		Edge newEdge = new Edge(a, b, c, 0);
+        Edge inverseEdge = new Edge(b, a, 0, 0);
+
+        if(containsEdge(adjacencyList[a], newEdge)){
+            getEdgeFromAdjacencyList(a, b).cap += c;
+        }else{
+            adjacencyList[b].add(inverseEdge);
+            adjacencyList[a].add(newEdge);
+        }
+        
+    }
 	void solveFlowGraph() {
         
 		int v = io.getInt(); // Antal hörn
@@ -126,11 +141,7 @@ public class BipRed2 {
         int t = io.getInt(); // Utlopp
         int e = io.getInt(); // Antal kanter
 
-		
-
-        @SuppressWarnings("unchecked")
-		LinkedList<Edge>[] adjacencyList = new LinkedList[v+1];
-		
+		adjacencyList = new LinkedList[v+1];
 		
 		for(int i = 1; i < v+1; i++){
 			adjacencyList[i] = new LinkedList<Edge>();
@@ -140,20 +151,14 @@ public class BipRed2 {
             int a = io.getInt();
             int b = io.getInt();
             int c = io.getInt();
-            Edge newEdge = new Edge(a, b, c, 0);
-            Edge inverseEdge = new Edge(b, a, 0, 0);
-            if(containsEdge(adjacencyList[a], newEdge)){
-                getEdgeFromAdjacencyList(adjacencyList, a, b).cap = c;
-            }else{
-                adjacencyList[b].add(inverseEdge);
-                adjacencyList[a].add(newEdge);
-            }
+			addEdge(a, b, c);
+           
         }
 
 		printEdges(adjacencyList);
 		
 	
-		fordFulkerson(adjacencyList, s, t, v);
+		fordFulkerson(s, t, v);
 	}
 
 	void printEdges(LinkedList<Edge>[] adjacencyList) {
@@ -168,8 +173,6 @@ public class BipRed2 {
 			}
 		}
 	}
-
-
 
 	void printAdjacencyList(LinkedList<Edge>[] adjacencyList,int V, int s, int t, int max_flow){
 		// Variabel för att räkna antalet kanter med flöde större än 0
@@ -201,50 +204,47 @@ public class BipRed2 {
         System.err.println("Skickade iväg flödeslösningen");
 	}
 
-	boolean bfs(LinkedList<Edge>[] adjacencyList, int V, int s, int t, int parent[])
+	public int[] bfs(int V, int s, int t)
     {
 		//System.err.println("här");
         // Create a queue, enqueue source vertex and mark
         // source vertex as visited
+		int parent[] = new int[V + 1];
 		Arrays.fill(parent, -1);
         Queue<Integer> queue = new LinkedList<>();
 		queue.add(s);
-        parent[s] = s;
+        parent[s] = -2;
         while (!queue.isEmpty()) {
             int a = queue.poll();
             for (int b = 1; b <= V; b++) {
-				
-                if (parent[b] == -1 && getEdgeFromAdjacencyList(adjacencyList, a, b).to != s && getEdgeFromAdjacencyList(adjacencyList, a, b).cap -getEdgeFromAdjacencyList(adjacencyList, a, b).flow  > 0) {
+                if (parent[b] == -1 && getEdgeFromAdjacencyList(a, b).cap -getEdgeFromAdjacencyList(a, b).flow  > 0) {
                     queue.add(b);
                     parent[b] = a;
-					if(b == s) {
-						return false;
+					if(b == t) {
+						return parent;
 					}
                 }
             }
         }
        
-        return parent[t] != -1; 
+        return parent; 
     }
 
-	int fordFulkerson(LinkedList<Edge> adjacencyList[], int s, int t, int V)
+	int fordFulkerson(int s, int t, int V)
     {
         int a; //from
 		int b; //to
         
-        // This array is filled by BFS and to store path
-        int parent[] = new int[V + 1];
-		
-		
- 
         int max_flow = 0; // There is no flow initially
  
         // Augment the flow while there is path from source
         // to sink
-        while (bfs(adjacencyList, V, s, t, parent) && V != 0 && s != t) {
+        while (true) {
+			int[] parent = bfs(V, s, t);
 
-			//System.err.println(Arrays.toString(parent));
-			
+			if(parent[t] == -1) {
+				break;
+			}		
             // Find minimum residual capacity of the edges
             // along the path filled by BFS. Or we can say
             // find the maximum flow through the path found.
@@ -252,21 +252,22 @@ public class BipRed2 {
 			
             for (b = t; b != s; b = parent[b]) {
                 a = parent[b];
-				Edge edge = getEdgeFromAdjacencyList(adjacencyList, a, b);
-				//int c = getEdgeFromAdjacencyList(resList, a, b).cap;
-				//int flow = getEdgeFromAdjacencyList(resList, a, b).flow;
-				//System.err.println("(" + a + ", " + b + ")");
-		
+				Edge edge = getEdgeFromAdjacencyList(a, b);
                 path_flow = Math.min(path_flow, edge.cap - edge.flow);
 		
             }
+
+			if(path_flow == 0) {
+				break;
+			}
  
             // update residual capacities of the edges and
             // reverse edges along the path
             for (b = t; b != s; b = parent[b]) {
                 a = parent[b];
-                getEdgeFromAdjacencyList(adjacencyList, a, b).flow += path_flow;
-                getEdgeFromAdjacencyList(adjacencyList, b, a).flow -= path_flow;
+				getEdgeFromAdjacencyList(b, a).flow -= path_flow;
+                getEdgeFromAdjacencyList(a, b).flow += path_flow;
+                
 				
             }
  
@@ -279,13 +280,13 @@ public class BipRed2 {
         return max_flow;
     }
 
-	Edge getEdgeFromAdjacencyList(LinkedList<Edge>[] list, int u, int v){
+	Edge getEdgeFromAdjacencyList(int u, int v){
 		//System.err.println("a: "+ u + " b: " + v);
-		for(int i = 0; i < list[u].size(); i++){
+		for(int i = 0; i < adjacencyList[u].size(); i++){
 			
-			if(list[u].get(i).to == v){
+			if(adjacencyList[u].get(i).to == v){
 				//Return correct edge if found
-				return list[u].get(i);
+				return adjacencyList[u].get(i);
 			}
 		}
 		
