@@ -34,12 +34,7 @@ public class BipRed2 {
 			this.cap = cap;
             this.flow = flow;
 		}
-
-
-
 	}
-
-
 
     void readBipartiteGraph() {
 	
@@ -118,17 +113,15 @@ public class BipRed2 {
         }
         return false;
     }
+
 	void solveFlowGraph() {
 		int v = io.getInt(); // Antal hörn
         int s = io.getInt(); // Källa
         int t = io.getInt(); // Utlopp
         int e = io.getInt(); // Antal kanter
 
-		
-
         @SuppressWarnings("unchecked")
 		LinkedList<Edge>[] adjacencyList = new LinkedList[v+1];
-		
 		
 		for(int i = 1; i < v+1; i++){
 			adjacencyList[i] = new LinkedList<Edge>();
@@ -138,14 +131,15 @@ public class BipRed2 {
             int a = io.getInt();
             int b = io.getInt();
             int c = io.getInt();
-            Edge newEdge = new Edge(a, b, c, 0);
+            Edge newEdge = new Edge(a, b, 0, 0);
             Edge inverseEdge = new Edge(b, a, 0, 0);
-            if(containsEdge(adjacencyList[a], newEdge)){
-                getEdgeFromAdjacencyList(adjacencyList, a, b).cap = c;
-            }else{
-                adjacencyList[b].add(inverseEdge);
-                adjacencyList[a].add(newEdge);
+            if(!containsEdge(adjacencyList[a], newEdge)){
+				adjacencyList[a].add(newEdge);
             }
+			if(!containsEdge(adjacencyList[b], inverseEdge)){
+				adjacencyList[b].add(inverseEdge);
+			}
+			getEdgeFromAdjacencyList(adjacencyList, a, b).cap += c;
         }
 
 		printEdges(adjacencyList);
@@ -199,24 +193,21 @@ public class BipRed2 {
         System.err.println("Skickade iväg flödeslösningen");
 	}
 
-	boolean bfs(LinkedList<Edge>[] adjacencyList, int V, int s, int t, int parent[])
-    {
-		//System.err.println("här");
+	boolean bfs(LinkedList<Edge>[] adjacencyList, int V, int s, int t, int parent[]){
         // Create a queue, enqueue source vertex and mark
         // source vertex as visited
 		Arrays.fill(parent, -1);
         Queue<Integer> queue = new LinkedList<>();
 		queue.add(s);
-        parent[s] = s;
+        parent[s] = -2;
         while (!queue.isEmpty()) {
             int a = queue.poll();
             for (int b = 1; b <= V; b++) {
-				
-                if (parent[b] == -1 && getEdgeFromAdjacencyList(adjacencyList, a, b).to != s && getEdgeFromAdjacencyList(adjacencyList, a, b).cap -getEdgeFromAdjacencyList(adjacencyList, a, b).flow  > 0) {
-                    queue.add(b);
-                    parent[b] = a;
-					if(b == s) {
-						return false;
+                if (parent[b] == -1 && containsEdge(adjacencyList[a], getEdgeFromAdjacencyList(adjacencyList, a, b)) && getEdgeFromAdjacencyList(adjacencyList, a, b).cap - getEdgeFromAdjacencyList(adjacencyList, a, b).flow  > 0) {
+                    queue.add(b); //
+                    parent[b] = a; //
+					if(b == s) { 
+						return parent[t] != -1; // ÄNDRA OM NÅGOT KAOSAR TILL FALSE ELLER TRUE
 					}
                 }
             }
@@ -239,10 +230,7 @@ public class BipRed2 {
  
         // Augment the flow while there is path from source
         // to sink
-        while (bfs(adjacencyList, V, s, t, parent) && V != 0 && s != t) {
-
-			//System.err.println(Arrays.toString(parent));
-			
+        while (bfs(adjacencyList, V, s, t, parent)) {
             // Find minimum residual capacity of the edges
             // along the path filled by BFS. Or we can say
             // find the maximum flow through the path found.
@@ -251,21 +239,19 @@ public class BipRed2 {
             for (b = t; b != s; b = parent[b]) {
                 a = parent[b];
 				Edge edge = getEdgeFromAdjacencyList(adjacencyList, a, b);
-				//int c = getEdgeFromAdjacencyList(resList, a, b).cap;
-				//int flow = getEdgeFromAdjacencyList(resList, a, b).flow;
-				//System.err.println("(" + a + ", " + b + ")");
-		
                 path_flow = Math.min(path_flow, edge.cap - edge.flow);
-		
+            }
+
+			if (path_flow == 0) {
+                break;
             }
  
             // update residual capacities of the edges and
             // reverse edges along the path
             for (b = t; b != s; b = parent[b]) {
                 a = parent[b];
+				getEdgeFromAdjacencyList(adjacencyList, b, a).flow -= path_flow;
                 getEdgeFromAdjacencyList(adjacencyList, a, b).flow += path_flow;
-                getEdgeFromAdjacencyList(adjacencyList, b, a).flow -= path_flow;
-				
             }
  
             // Add path flow to overall flow
