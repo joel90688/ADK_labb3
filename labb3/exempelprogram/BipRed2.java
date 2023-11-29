@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-
 /**
  * Exempel på in- och utdatahantering för maxflödeslabben i kursen
  * ADK.
@@ -135,7 +134,6 @@ public class BipRed2 {
         
     }
 	void solveFlowGraph() {
-        
 		int v = io.getInt(); // Antal hörn
         int s = io.getInt(); // Källa
         int t = io.getInt(); // Utlopp
