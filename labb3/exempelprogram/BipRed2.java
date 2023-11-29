@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-
 /**
  * Exempel på in- och utdatahantering för maxflödeslabben i kursen
  * ADK.
@@ -126,7 +125,6 @@ public class BipRed2 {
     }
     
 	void solveFlowGraph() {
-        
 		int v = io.getInt(); // Antal hörn
         int s = io.getInt(); // Källa
         int t = io.getInt(); // Utlopp
@@ -142,15 +140,26 @@ public class BipRed2 {
             int a = io.getInt();
             int b = io.getInt();
             int c = io.getInt();
-			if(a < b) {
+			Edge newEdge = new Edge(a, b, c, 0);
+			Edge inverseEdge = new Edge(b, a, 0, 0);
+			if(containsEdge(adjacencyList[a], newEdge)){
+				getEdgeFromAdjacencyList(adjacencyList, a, b).value = c;
+			}else{
 				adjacencyList[b].add(new Edge(b, a, 0, 0));
 				adjacencyList[a].add(new Edge(a, b, c, 0));
 			}
-			
-            
         }
-		
+
 		fordFulkerson(adjacencyList, s, t, v);
+	}
+
+	boolean containsEdge(LinkedList<Edge> list, Edge edgeToFind){
+		for(Edge edge : list){
+			if(edge.to == edgeToFind.to){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void printAdjacencyList(LinkedList<Edge>[] adjacencyList,int V, int s, int t, int max_flow){
@@ -198,7 +207,7 @@ public class BipRed2 {
             int a = queue.poll();
             for (int b = 1; b <= V; b++) {
 				
-                if (parent[b] == -1 && getEdgeFromAdjacencyList(adjacencyList, a, b).value -getEdgeFromAdjacencyList(adjacencyList, a, b).flow  > 0) {
+                if (parent[b] == -1 && getEdgeFromAdjacencyList(adjacencyList, a, b).from != s && getEdgeFromAdjacencyList(adjacencyList, a, b).value -getEdgeFromAdjacencyList(adjacencyList, a, b).flow  > 0) {
 					queue.add(b);
                     parent[b] = a;  			
                 }
