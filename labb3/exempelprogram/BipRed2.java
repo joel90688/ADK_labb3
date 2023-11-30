@@ -203,11 +203,11 @@ public class BipRed2 {
         parent[s] = -2;
         while (!queue.isEmpty()) {
             int a = queue.poll();
-            for (int b = 1; b <= V; b++) {
-                if (getEdgeFromAdjacencyList(a, b).cap - getEdgeFromAdjacencyList(a, b).flow > 0 && parent[b] == -1) {
-                    queue.add(b);
-                    parent[b] = a;
-					if(b == t) {
+			for (Edge b : adjacencyList[a]) {
+                if (getEdgeFromAdjacencyList(a, b.to).cap - getEdgeFromAdjacencyList(a, b.to).flow > 0 && parent[b.to] == -1) {
+                    queue.add(b.to);
+                    parent[b.to] = a;
+					if(b.to == t) {
 						return parent;
 					}
                 }
