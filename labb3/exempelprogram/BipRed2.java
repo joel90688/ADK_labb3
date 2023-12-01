@@ -65,6 +65,7 @@ public class BipRed2 {
 		System.err.println("flödesgrafen");
 		V = V + 2;
 		int s = V-1, t = V;
+
 		// Create a new list for additional edges
 		List<Edge> additionalEdges = new ArrayList<>();
 		
@@ -137,15 +138,14 @@ public class BipRed2 {
             if(!containsEdge(adjacencyList[a], newEdge)){
 				adjacencyList[a].add(newEdge);
             }
+			getEdgeFromAdjacencyList(a, b).cap += c;
 			if(!containsEdge(adjacencyList[b], inverseEdge)){
 				adjacencyList[b].add(inverseEdge);
+				getEdgeFromAdjacencyList(b, a).cap = 0;
 			}
-			getEdgeFromAdjacencyList(a, b).cap += c;
         }
 
 		printEdges(adjacencyList);
-		
-	
 		fordFulkerson(s, t, v);
 	}
 
@@ -204,7 +204,7 @@ public class BipRed2 {
         while (!queue.isEmpty()) {
             int a = queue.poll();
 			for (Edge b : adjacencyList[a]) {
-                if (getEdgeFromAdjacencyList(a, b.to).cap - getEdgeFromAdjacencyList(a, b.to).flow > 0 && parent[b.to] == -1) {
+                if (b.cap - b.flow > 0 && parent[b.to] == -1 && b.to != -1) {
                     queue.add(b.to);
                     parent[b.to] = a;
 					if(b.to == t) {
@@ -264,7 +264,6 @@ public class BipRed2 {
 	Edge getEdgeFromAdjacencyList(int u, int v){
 		//System.err.println("a: "+ u + " b: " + v);
 		for(int i = 0; i < adjacencyList[u].size(); i++){
-			
 			if(adjacencyList[u].get(i).to == v){
 				//Return correct edge if found
 				return adjacencyList[u].get(i);
@@ -272,7 +271,7 @@ public class BipRed2 {
 		}
 		
 		//return 0-Edge if not found
-		return new Edge(0, 0, 0, 0);
+		return new Edge(-1, -1, -1, -1);
 	}
 
 
