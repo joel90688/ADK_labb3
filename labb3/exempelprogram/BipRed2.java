@@ -17,8 +17,8 @@ import java.util.Queue;
 
 public class BipRed2 {
     Kattio io;
-    int V;
-	int E;
+    int biNodes;
+	int biEdges;
 	int X;
 	int Y;
 	List<Edge> edges = new ArrayList<>();
@@ -37,75 +37,94 @@ public class BipRed2 {
             this.flow = flow;
 		}
 	}
+	
+	class MatchingSolution {
+		
+		int totalFlow;
+		List<Edge> matchingEdges;
+	
+		MatchingSolution(int totalFlow, List<Edge> matchingEdges) {
+			this.totalFlow = totalFlow;
+			this.matchingEdges = matchingEdges;
+		}
+	}
+
+	class FlowSolution {
+		int V;
+		int s;
+		int t;
+		int maxFlow;
+		int edgesWithPosFlow;
+		LinkedList<Edge> flowEdges;
+	
+		FlowSolution(int V, int s, int t, int maxFlow, int edgesWithPosFlow, LinkedList<Edge> flowEdges) {
+			this.V = V;
+			this.s = s;
+			this.t = t;
+			this.maxFlow = maxFlow;
+			this.edgesWithPosFlow = edgesWithPosFlow;
+			this.flowEdges = flowEdges;
+		}
+	}
+	class FlowGraph {
+		int V; // Antal hörn
+		int s; // Källa
+		int t; // Sänka
+		List<Edge> edges; // Kanter
+	
+		FlowGraph(int V, int s, int t, List<Edge> edges) {
+			this.V = V;
+			this.s = s;
+			this.t = t;
+			this.edges = edges;
+		}
+	}
 
     void readBipartiteGraph() {
 	
-		System.err.println("Bipartit graf");
+		
 		// Läs antal hörn och kanter
 		X = io.getInt();
 		Y = io.getInt();
-		V = X + Y;
-		E = io.getInt();
+		biNodes = X + Y;
+		biEdges = io.getInt();
 
 		//System.err.println("X: " + X);
 		//System.err.println("Y: " + Y);
 		//System.err.println("E: " + E);
 		// Läs in kanterna
-		for (int i = 0; i < E; ++i) {
+		for (int i = 0; i < biEdges; ++i) {
 			int a = io.getInt();
 			int b = io.getInt();
-			edges.add(new Edge(a, b, 0, 0));
+			edges.add(new Edge(a, b, 1, 0));
 			//System.err.println("kant: "+ "(" + a + ", "+ b + ")");
 		}
 
-        System.err.println("läst bipartit graf");
+        
     }
     
-    void writeFlowGraph() {
+    FlowGraph writeFlowGraph() {
 		System.err.println("flödesgrafen");
-		V = V + 2;
-		int s = V-1, t = V;
-
-		// Create a new list for additional edges
-		List<Edge> additionalEdges = new ArrayList<>();
+		int flowNodes = biNodes + 2;
+		int s = flowNodes-1, t = flowNodes;
 		
 		// Add new edges from source to each existing node in X
 		for(int i = 1; i <= X; i++) {
 			if(X == 0) {
-				additionalEdges.add(new Edge(s, t, 0, 0));
+				edges.add(new Edge(s, t, 1, 0));
 			}
-			additionalEdges.add(new Edge(s, i, 0, 0));
+			edges.add(new Edge(s, i, 1, 0));
 		}
 	
 		// Add new edges from Y to Sänka
 		for(int i = X + 1; i <= X + Y; i++) {
 			if(Y == 0) {
-				additionalEdges.add(new Edge(t, s, 0, 0));
+				edges.add(new Edge(t, s, 1, 0));
 			}
-			additionalEdges.add(new Edge(i, t, 0, 0));
+			edges.add(new Edge(i, t, 1, 0));
 		}
 		
-		edges.addAll(additionalEdges);
-		// Skriv ut antal hörn och kanter samt källa och sänka
-		//io.println();
-		io.println(V);
-		//System.err.println(V);
-		io.println(s + " " + t);
-		//System.err.println(s + " " + t);
-		io.println(edges.size());
-		//System.err.println(edges.size());
-		
-		
-		for (Edge edge : edges) {
-			int c = 1;
-			io.println(edge.from + " " + edge.to + " " + c);
-			//System.err.println(edge.from + " " + edge.to + " " + c);
-		}
-		// Var noggrann med att flusha utdata när flödesgrafen skrivits ut!
-		io.flush();
-		
-		// Debugutskrift
-		System.err.println("Skickade iväg flödesgrafen");
+		return new FlowGraph(flowNodes, s, t, edges);
     }
     
 	boolean containsEdge(LinkedList<Edge> list, Edge edgeToFind){
@@ -117,11 +136,11 @@ public class BipRed2 {
         return false;
     }
 
-	void solveFlowGraph() {
-		int v = io.getInt(); // Antal hörn
-        int s = io.getInt(); // Källa
-        int t = io.getInt(); // Utlopp
-        int e = io.getInt(); // Antal kanter
+	FlowSolution solveFlowGraph(FlowGraph flowGraph) {
+		int v = flowGraph.V; // Antal hörn
+        int s = flowGraph.s; // Källa
+        int t = flowGraph.t; // Utlopp
+        int e = edges.size(); // Antal kanter
 
 		adjacencyList = new LinkedList[v+1];
 		
@@ -129,13 +148,15 @@ public class BipRed2 {
 			adjacencyList[i] = new LinkedList<Edge>();
 		}
 		
-		for (int i = 0; i < e; i++) {
-            int a = io.getInt();
-            int b = io.getInt();
-            int c = io.getInt();
-            Edge newEdge = new Edge(a, b, 0, 0);
+
+		for(Edge edge : edges) {
+			int a = edge.from;
+			int b = edge.to;
+			int c = edge.cap;
+			Edge newEdge = new Edge(a, b, 0, 0);
             Edge inverseEdge = new Edge(b, a, 0, 0);
-            if(!containsEdge(adjacencyList[a], newEdge)){
+
+			if(!containsEdge(adjacencyList[a], newEdge)){
 				adjacencyList[a].add(newEdge);
             }
 			getEdgeFromAdjacencyList(a, b).cap += c;
@@ -143,26 +164,14 @@ public class BipRed2 {
 				adjacencyList[b].add(inverseEdge);
 				getEdgeFromAdjacencyList(b, a).cap = 0;
 			}
-        }
 
-		printEdges(adjacencyList);
-		fordFulkerson(s, t, v);
-	}
-
-	void printEdges(LinkedList<Edge>[] adjacencyList) {
-		for (int i = 1; i < adjacencyList.length; i++) {
-			// Printing the vertex number
-			System.err.println("Vertex " + i + " is connected to:");
-		
-			// Iterating through the linked list of edges for the current vertex
-			for (Edge edge : adjacencyList[i]) {
-				// Printing each edge
-				System.err.println("Kant: " + "(" + edge.from + ", " + edge.to + ", c:" + edge.cap  +")");
-			}
 		}
+		
+		return fordFulkerson(s, t, v);
 	}
 
-	void printAdjacencyList(LinkedList<Edge>[] adjacencyList,int V, int s, int t, int max_flow){
+
+	FlowSolution printAdjacencyList(LinkedList<Edge>[] adjacencyList,int V, int s, int t, int max_flow){
 		// Variabel för att räkna antalet kanter med flöde större än 0
 		int edgeCount = 0;
 		LinkedList<Edge> flowEdges = new LinkedList<>();
@@ -175,21 +184,10 @@ public class BipRed2 {
 				}
 			}
 		}
-
+		FlowSolution flowSolution = new FlowSolution(V, s, t, max_flow,edgeCount, flowEdges);
 		// Skriv ut resultat
-		io.println(V);
-		io.println(s + " " + t + " " + max_flow);
-		io.println(edgeCount);
-
-		// Gå igenom varje nod och dess adjacenslista igen för att skriva ut kanter med positivt flöde
-		for (Edge edge : flowEdges) {
-			
-			io.println(edge.from + " " + edge.to + " " + edge.flow);
-						
-		}
-
-        io.flush();
-        System.err.println("Skickade iväg flödeslösningen");
+		
+        return flowSolution;
 	}
 
 	public int[] bfs(int V, int s, int t)
@@ -216,7 +214,7 @@ public class BipRed2 {
         return parent; 
     }
 
-	int fordFulkerson(int s, int t, int V)
+	FlowSolution fordFulkerson(int s, int t, int V)
     {
         int a, b; //from, to
         
@@ -256,9 +254,11 @@ public class BipRed2 {
             max_flow += path_flow;
         }
 		
-		printAdjacencyList(adjacencyList, V, s, t, max_flow);
+		FlowSolution flowSolution = printAdjacencyList(adjacencyList, V, s, t, max_flow);
         // Return the overall flow
-        return max_flow;
+
+		
+        return flowSolution;
     }
 
 	Edge getEdgeFromAdjacencyList(int u, int v){
@@ -276,63 +276,66 @@ public class BipRed2 {
 
 
     
-    void readMaxFlowSolution() {
+    MatchingSolution readMaxFlowSolution(FlowSolution flowSolution) {
 		// Läs in antal hörn, kanter, källa, sänka, och totalt flöde
 		// (Antal hörn, källa och sänka borde vara samma som vi i grafen vi
 		// skickade iväg)
-		int v = io.getInt();
+		int v = flowSolution.V;
 		//System.err.println(v);
-		int s = io.getInt();
-		int t = io.getInt();
-		totflow = io.getInt();
+		int s = flowSolution.s;
+		int t = flowSolution.t;
+		int totflow = flowSolution.maxFlow;
 		//System.err.println(s + "  " + t + "  " + totflow);
-		int e = io.getInt();
+		int e = flowSolution.edgesWithPosFlow;
 		//System.err.println(e);
-		
+		ArrayList<Edge> matchinEdges = new ArrayList<>();
 
-		for (int i = 0; i < e; ++i) {
-			// Flöde f från a till b
-			int a = io.getInt();
-			int b = io.getInt();
-			int f = io.getInt();
+		for(Edge edge : flowSolution.flowEdges) {
+			int a = edge.from;
+			int b = edge.to;
+			int f = edge.flow;
+
 			if (f > 0 && !(a == s || a == t) && !(b == s || b == t)) {
 				// Vi lägger endast till kanter med flöde och som inte är direkt kopplade till källa eller sänka
-				flowEdges.add(new Edge(a, b, 0, 0));
+				matchinEdges.add(new Edge(a, b, 0, 0));
 				//System.err.println(a + " " + b + " " + f);
 			}
-	
 		}
 
-		System.err.println("Läst flödeslösningen");
+		MatchingSolution matchingSolution = new MatchingSolution(totflow, matchinEdges);
+
+		return matchingSolution;
     }
     
     
-    void writeBipMatchSolution() {
+    void writeBipMatchSolution(MatchingSolution matchingSolution) {
 	
 	// Skriv ut antal hörn och storleken på matchningen
 	io.println(X + " " + Y);
-	io.println(totflow);
+	io.println(matchingSolution.totalFlow);
 	
-	for (Edge edge : flowEdges) {
+	for (Edge edge : matchingSolution.matchingEdges) {
         // Kant mellan a och b ingår i vår matchningslösning
         io.println(edge.from + " " + edge.to);
     }
 
 	io.flush();
     }
+
+
     
     BipRed2() {
 	io = new Kattio(System.in, System.out);
 	
-	//readBipartiteGraph();
+	readBipartiteGraph();
 	
-	//writeFlowGraph();
+	FlowGraph flowGraph = writeFlowGraph();
 
-	solveFlowGraph();
+	FlowSolution flowSolution = solveFlowGraph(flowGraph);
 	
-	//readMaxFlowSolution();
+	MatchingSolution matchingSolution = readMaxFlowSolution(flowSolution);
 	
-	//writeBipMatchSolution();
+	writeBipMatchSolution(matchingSolution);
 
 	// debugutskrift
 	System.err.println("BipRed2 avslutar\n");
